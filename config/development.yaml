@@ -1,0 +1,3 @@
+LogsSecretName: grafana_logs_auth_key_pair
+MetricsSecretName: grafana_auth_key_pair
+KnowledgeBaseId: UT6Z0K441J

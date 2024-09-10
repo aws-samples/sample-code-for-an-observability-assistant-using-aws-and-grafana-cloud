@@ -1,0 +1,146 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Powertools API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/invoke-logql": {
+      "get": {
+        "tags": [
+          "GrafanaCloud",
+          "Loki",
+          "Statement"
+        ],
+        "summary": "Invokes a given logql statement",
+        "description": "Makes GET HTTP to Grafana Cloud to invoke a specified logql statement passed in the input .This calls          /loki/api/v1/query_range endpoint from Grafana Loki host endpoint using basic authentication.         Secrets to call are stored in AWS Secrets Manager",
+        "operationId": "invokeLogqlStatement",
+        "parameters": [
+          {
+            "description": "The LogQL Statement to invoke",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logql",
+              "description": "The LogQL Statement to invoke"
+            },
+            "name": "logql",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "LogQL Statement invocation results from Grafana Cloud",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Return",
+                  "description": "Results from the logql statement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-available-logql-labels": {
+      "get": {
+        "tags": [
+          "GrafanaCloud",
+          "Loki",
+          "Labels"
+        ],
+        "summary": "Get available LogQL filter labels from Grafana Cloud",
+        "description": "Makes GET HTTP to Grafana Cloud to get a list of available filter labels .This calls          /loki/api/v1/labels from Grafana Loki host endpoint using basic authentication.         Secrets to call are stored in AWS Secrets Manager",
+        "operationId": "getAvailableLokiLabels",
+        "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "List of available Loki labels from Grafana Cloud",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {},
+                  "type": "array",
+                  "title": "Return",
+                  "description": "List of available Loki Labels from Grafana Cloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

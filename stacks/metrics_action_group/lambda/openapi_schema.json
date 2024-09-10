@@ -1,0 +1,183 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Powertools API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/invoke-promql": {
+      "get": {
+        "tags": [
+          "GrafanaCloud",
+          "Prometheus",
+          "Statement"
+        ],
+        "summary": "Invokes a given promql statement",
+        "description": "Makes GET HTTP to Grafana Cloud to invoke a specified promql statement passed in the input .This calls          /api/v1/query endpoint from Grafana Prometheus host endpoint using basic authentication.         Secrets to call are stored in AWS Secrets Manager",
+        "operationId": "invokePromqlStatement",
+        "parameters": [
+          {
+            "description": "The PromQL Statement to invoke",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Promql",
+              "description": "The PromQL Statement to invoke"
+            },
+            "name": "promql",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "PromQL Statement invocation results from Grafana Cloud",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Return",
+                  "description": "Results from the promql statement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-available-promql-labels": {
+      "get": {
+        "tags": [
+          "GrafanaCloud",
+          "Prometheus",
+          "Labels"
+        ],
+        "summary": "Get available PromQL filter labels from Grafana Cloud",
+        "description": "Makes GET HTTP to Grafana Cloud to get a list of available filter labels .This calls          api/v1/labels endpoint from Grafana Prometheus host endpoint using basic authentication.         Secrets to call are stored in AWS Secrets Manager",
+        "operationId": "getAvailablePrometheusLabels",
+        "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "List of available Prometheus labels from Grafana Cloud",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {},
+                  "type": "array",
+                  "title": "Return",
+                  "description": "List of available Prometheus Labels from Grafana Cloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-available-metric-names": {
+      "get": {
+        "tags": [
+          "GrafanaCloud",
+          "Prometheus",
+          "Metrics"
+        ],
+        "summary": "Get available prometheus metrics names from Grafana Cloud",
+        "description": "Makes GET HTTP to Grafana Cloud to get a list of available Prometheus metric names.This calls          /api/v1/label/__name__/values endpoint from Grafana Prometheus host endpoint using basic authentication.         Secrets to call are stored in AWS Secrets Manager",
+        "operationId": "getAvailablePrometheusMetricNames",
+        "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "List of available Prometheus metric namesfrom Grafana Cloud",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {},
+                  "type": "array",
+                  "title": "Return",
+                  "description": "List of available Prometheus metric names from Grafana Cloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

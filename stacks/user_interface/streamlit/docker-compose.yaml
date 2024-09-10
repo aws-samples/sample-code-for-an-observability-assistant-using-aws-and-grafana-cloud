@@ -1,0 +1,10 @@
+services:
+  streamlit:
+    container_name: streamlit
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    ports:
+      - 8501:8501
+    environment:
+      - AWS_DEFAULT_REGION=us-west-2

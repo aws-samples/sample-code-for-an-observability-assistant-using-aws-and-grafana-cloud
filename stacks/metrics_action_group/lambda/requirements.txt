@@ -1,0 +1,4 @@
+requests
+aws-lambda-powertools[tracer]
+pydantic
+boto3
