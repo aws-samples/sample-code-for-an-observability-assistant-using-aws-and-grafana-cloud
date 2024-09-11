@@ -7,7 +7,7 @@ from stacks.logs_action_group.stack import LambdaStack as LogsActionGroupStack
 from stacks.metrics_action_group.stack import LambdaStack as MetricsActionGroupStack
 from stacks.bedrock_agent.stack import ObservabilityAssistantAgent
 from stacks.vpc.stack import VpcStack
-# from stacks.cognito_for_authz.stack import CognitoStack
+from cdk_nag import ( AwsSolutionsChecks, NagSuppressions )
 import os
 
 
@@ -37,4 +37,5 @@ streamlit_stack = WebAppStack(app,
             imported_cert_arn=conf.get('SelfSignedCertARN')
 )
 
+cdk.Aspects.of(app).add(AwsSolutionsChecks())
 app.synth()
