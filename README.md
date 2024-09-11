@@ -62,4 +62,14 @@ command.
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-Enjoy!
+## Pre Deployment Actions
+### Create Self Signed Certificate and Upload to ACM
+
+* Private Key - `openssl genrsa -out ca-key.pem 2048`
+* Cert - `openssl req -new -x509 -nodes -days 365    -key ca-key.pem    -out ca-cert.pem`
+* Upload to ACM - `aws acm import-certificate --certificate fileb://ca-cert.pem --private-key fileb://ca-key.pem`
+* Note the ARN and mention that under `config/development.yaml` file
+
+## Post Deployment actions
+
+* Create a user to login in the Cognito Pool

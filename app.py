@@ -7,6 +7,7 @@ from stacks.logs_action_group.stack import LambdaStack as LogsActionGroupStack
 from stacks.metrics_action_group.stack import LambdaStack as MetricsActionGroupStack
 from stacks.bedrock_agent.stack import ObservabilityAssistantAgent
 from stacks.vpc.stack import VpcStack
+# from stacks.cognito_for_authz.stack import CognitoStack
 import os
 
 
@@ -32,7 +33,8 @@ streamlit_stack = WebAppStack(app,
             knowledgebase_id=conf.get('KnowledgeBaseId'),
             bedrock_agent_id=bedrock_agent_stack.bedrock_agent_id,
             fargate_service=logs_lambda_stack.fargate_service,
-            ecs_cluster=vpc_stack.ecs_cluster
+            ecs_cluster=vpc_stack.ecs_cluster,
+            imported_cert_arn=conf.get('SelfSignedCertARN')
 )
 
 app.synth()
