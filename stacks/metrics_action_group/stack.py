@@ -6,6 +6,7 @@ from aws_cdk import (
     Stack,
     aws_lambda as _lambda,
     aws_iam as iam,
+    aws_logs as logs,
     # aws_lambda_python_alpha as lambda_python,
     BundlingOptions,
     aws_secretsmanager as sm,
@@ -25,34 +26,11 @@ class LambdaStack(Stack):
                  ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # Create a Lambda function
-        # lambda_function = lambda_python.PythonFunction(
-        #     self,
-        #     "logs-action-group",
-        #     entry="./stacks/logs_action_group/lambda",
-        #     index="app.py",
-        #     handler="lambda_handler",
-        #     runtime=_lambda.Runtime.PYTHON_3_12,
-        #     timeout=cdk.Duration.seconds(10),
-        #     description="Logs Action Group Lambda Function",
-        #     function_name="logs-action-group",
-        #     bundling=BundlingOptions(
-        #         image=_lambda.Runtime.PYTHON_3_12.bundling_image,
-        #         command=[
-        #             "bash",
-        #             "-c",
-        #             "pip install --no-cache -r requirements.txt -t /asset-output && cp -au . /asset-output",
-        #         ],
-        #     ),
-        #     initial_policy=[
-        #         iam.PolicyStatement(
-        #             actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-        #             resources=["*"]
-        #         )
-        #     ]
-        # )
-        #Get Secret Manager secret ARN from the name
         secret = sm.Secret.from_secret_name_v2(self, "Secret", secret_name)
+
+        log_group = logs.LogGroup(self, "LogGroup",
+                                      log_group_name="metrics-action-group",
+                                       removal_policy=cdk.RemovalPolicy.DESTROY )
 
         lambda_function = _lambda.Function(
             self,
@@ -87,13 +65,11 @@ class LambdaStack(Stack):
             initial_policy=[
                 iam.PolicyStatement(
                     actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-                    resources=["*"]
+                    resources=[log_group.log_group_arn]
                 )
             ]
         )
 
-        #Export tge lambda arn
-        # CfnOutput(self, "LogsLambdaFunctionArn", value=lambda_function.function_arn, export_name="LogsLambdaFunctionArn")
         self.lambda_function = lambda_function
         secret.grant_read(lambda_function)
 

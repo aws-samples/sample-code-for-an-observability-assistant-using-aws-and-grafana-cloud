@@ -31,11 +31,26 @@ bedrock_agent_stack = ObservabilityAssistantAgent(app,
 streamlit_stack = WebAppStack(app, 
             "grafana-streamlit-webapp",
             knowledgebase_id=conf.get('KnowledgeBaseId'),
-            bedrock_agent_id=bedrock_agent_stack.bedrock_agent_id,
+            bedrock_agent = bedrock_agent_stack.bedrock_agent,
+            bedrock_agent_alias= bedrock_agent_stack.bedrock_agent_alias,
+            # bedrock_agent_id=bedrock_agent_stack.bedrock_agent_id,
             fargate_service=logs_lambda_stack.fargate_service,
             ecs_cluster=vpc_stack.ecs_cluster,
             imported_cert_arn=conf.get('SelfSignedCertARN')
 )
 
 cdk.Aspects.of(app).add(AwsSolutionsChecks())
+NagSuppressions.add_stack_suppressions(vpc_stack, [{"id":"AwsSolutions-S1", "reason":"Bucket itself is used for access logging."}])
+NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-ELB2", "reason":"Getting blocked by https://github.com/aws/aws-cdk/issues/25007 with no resolution"}])
+NagSuppressions.add_stack_suppressions(logs_lambda_stack, [{"id":"AwsSolutions-ELB2", "reason":"Getting blocked by https://github.com/aws/aws-cdk/issues/25007 with no resolution"}])
+NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-EC23", "reason":"This is by design and protected by WAF"}])
+# NagSuppressions.add_stack_suppressions(logs_lambda_stack, [{"id":"AwsSolutions-EC23", "reason":"False Warning already implemented to limit to VPC Only CIDRs"}])
+NagSuppressions.add_stack_suppressions(logs_lambda_stack, [{"id":"AwsSolutions-ECS2", "reason":"Only Secret Name is noted, this is by design"}])
+NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-ECS2", "reason":"Only Secret Name is noted, this is by design"}])
+NagSuppressions.add_stack_suppressions(metrics_lambda_stack, [{"id":"AwsSolutions-IAM4", "reason":"not coded in this solution"}])
+NagSuppressions.add_stack_suppressions(logs_lambda_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
+NagSuppressions.add_stack_suppressions(metrics_lambda_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
+NagSuppressions.add_stack_suppressions(bedrock_agent_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
+NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
+# NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-IAM5", "reason":"All created policies are already restricted and no wild card"}])
 app.synth()

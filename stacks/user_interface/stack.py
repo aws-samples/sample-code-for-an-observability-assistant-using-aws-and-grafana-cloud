@@ -15,7 +15,9 @@ from aws_cdk import (
     aws_cloudfront_origins as origins,
     aws_secretsmanager as secretsmanager,
     aws_certificatemanager as acm,
-    CfnOutput
+    CfnOutput,
+    aws_bedrock as bedrock,
+    aws_wafv2 as waf
 )
 
 
@@ -24,7 +26,8 @@ class WebAppStack(Stack):
     def __init__(self, 
                  scope: Construct, 
                  construct_id: str,
-                 bedrock_agent_id: str, 
+                 bedrock_agent: bedrock.CfnAgent, 
+                 bedrock_agent_alias: bedrock.CfnAgentAlias,
                  knowledgebase_id: str,
                  ecs_cluster: ecs.Cluster,
                  imported_cert_arn: str,
@@ -61,7 +64,8 @@ class WebAppStack(Stack):
                 image=ecs.ContainerImage.from_asset("./stacks/user_interface/streamlit",platform=ecr_assets.Platform.LINUX_ARM64),
                 container_port=8501,
                 environment={
-                    "BEDROCK_AGENT_ID": bedrock_agent_id,
+                    "BEDROCK_AGENT_ID": bedrock_agent.attr_agent_id,
+                    "BEDROCK_AGENT_ALIAS_ID": bedrock_agent_alias.attr_agent_alias_id,
                     "KNOWLEDGEBASE_ID": knowledgebase_id,
                     "FUNCTION_CALLING_URL": fargate_service.load_balancer.load_balancer_dns_name
                 },
@@ -98,66 +102,11 @@ class WebAppStack(Stack):
         # Grant access to the fargate service IAM access to invoke Bedrock runtime API calls
         ui_fargate_service.task_definition.task_role.add_to_policy(iam.PolicyStatement( 
             effect=iam.Effect.ALLOW, 
-            resources=["*"], 
+            resources=[bedrock_agent_alias.attr_agent_alias_arn], 
             actions=[
                 "bedrock:InvokeAgent"
             ])
         )
-
-        #Adding Cloudfront distribution to front the load balancer
-        # cloudfront_custom_headers = {
-        #                 "X-CF-DISTRIBUTION": self.stack_id
-        #             }
-
-        # cloudfront_distribution = cloudfront.Distribution(self, "streamlit-cloudfront",
-        #     default_behavior=cloudfront.BehaviorOptions(
-        #         viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
-        #         origin=origins.LoadBalancerV2Origin(
-        #             ui_fargate_service.load_balancer,
-        #             protocol_policy=cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
-        #             custom_headers=cloudfront_custom_headers
-        #             ),
-        #             # cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
-        #             # allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
-        #             origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER
-        #         )
-        # )
-
-        # CfnOutput(self, "cloudfront-distribution-dns", value=cloudfront_distribution.domain_name)
-
-        # Add a rule to the ELB on the existing listener to check for the specific headers injected by cloudfront
-
-        # elb.ApplicationListenerRule(self, "cloudfront-rule",
-        #     listener=ui_fargate_service.listener,
-        #     priority=1,
-        #     conditions=[
-        #         elb.ListenerCondition.http_header("X-CF-DISTRIBUTION", [self.stack_id])
-        #     ],
-        #     action=elb.ListenerAction.forward(
-        #         target_groups=[ui_fargate_service.target_group]
-        #     )
-        # )
-
-        # Disallow accessing the load balancer URL directly
-        # cfn_listener: elb.CfnListener = ui_fargate_service.listener.node.default_child
-        # cfn_listener.default_actions = [
-        #     {
-        #         "type": "fixed-response",
-        #         "fixedResponseConfig": {
-        #             "statusCode": "403",
-        #             "contentType": "text/plain",
-        #             "messageBody": "Access denied",
-        #         },
-        #     }
-        # ]
-
-        #TODO : Add Ingress rule to allow requests on load balancer only from Cloudfront prefix
-
-        # ui_fargate_service.load_balancer.connections.security_groups[0].add_ingress_rule(
-        #     source_prefix_list= ec2.Peer.prefix_list(prefix_list_name="com.amazonaws.global.cloudfront.origin-facing"),
-        #     from_port=80, to_port=80, description="Allow Cloudfront"
-           
-        # )
 
 
         cognito_domain_prefix = "observability-assistant-pool"
@@ -169,8 +118,16 @@ class WebAppStack(Stack):
                                         sign_in_aliases=cognito.SignInAliases(email=True),
                                         auto_verify=cognito.AutoVerifiedAttrs(email=True),
                                         self_sign_up_enabled=False,
-                                        removal_policy=RemovalPolicy.DESTROY
+                                        removal_policy=RemovalPolicy.DESTROY,
+                                        advanced_security_mode=cognito.AdvancedSecurityMode.ENFORCED,
+                                        password_policy=cognito.PasswordPolicy(
+                                            min_length=8,
+                                            require_lowercase=True,
+                                            require_uppercase=True,
+                                            require_digits=True,
+                                            require_symbols=True,
                                         )
+        )
 
         user_pool_domain = cognito.UserPoolDomain(
             self,
@@ -229,17 +186,51 @@ class WebAppStack(Stack):
             description="Outbound HTTPS traffic to the OIDC provider",
         )
 
-        # # Disallow accessing the load balancer URL directly
-        # cfn_listener: elb.CfnListener = ui_fargate_service.listener.node.default_child
-        # cfn_listener.default_actions = [
-        #     {
-        #         "type": "fixed-response",
-        #         "fixedResponseConfig": {
-        #             "statusCode": "403",
-        #             "contentType": "text/plain",
-        #             "messageBody": "This is not a valid endpoint!",
-        #         },
-        #     }
-        # ]
+        # Disallow accessing the load balancer URL directly
+        cfn_listener: elb.CfnListener = ui_fargate_service.listener.node.default_child
+        cfn_listener.default_actions = [
+            {
+                "type": "fixed-response",
+                "fixedResponseConfig": {
+                    "statusCode": "403",
+                    "contentType": "text/plain",
+                    "messageBody": "This is not a valid endpoint!",
+                },
+            }
+        ]
+
+        waf_protection = waf.CfnWebACL(self, "WAFProtection", 
+                                       default_action=waf.CfnWebACL.DefaultActionProperty(allow={}), 
+                                       scope="REGIONAL", 
+                                       visibility_config=waf.CfnWebACL.VisibilityConfigProperty(
+                                           cloud_watch_metrics_enabled=True, 
+                                           metric_name="streamlit-waf-protection", 
+                                           sampled_requests_enabled=True
+                                           ), 
+                                        rules=[
+                                            waf.CfnWebACL.RuleProperty(
+                                            name="CRSRule", 
+                                            priority=0, 
+                                            statement=waf.CfnWebACL.StatementProperty(
+                                                managed_rule_group_statement=waf.CfnWebACL.ManagedRuleGroupStatementProperty(
+                                                    vendor_name="AWS",
+                                                    name="AWSManagedRulesCommonRuleSet"
+                                                )
+                                            ),
+                                            override_action=waf.CfnWebACL.OverrideActionProperty(none={}), 
+                                            visibility_config=waf.CfnWebACL.VisibilityConfigProperty(
+                                                cloud_watch_metrics_enabled=True, 
+                                                metric_name="streamlit-waf-protection-owasp-ruleset", 
+                                                sampled_requests_enabled=True
+                                            )
+                                        )]
+        )
+
+        alb_waf_association = waf.CfnWebACLAssociation(self, "ALBWebACLAssociation",
+                                                        resource_arn=ui_fargate_service.load_balancer.load_balancer_arn,
+                                                        web_acl_arn=waf_protection.attr_arn
+                                                        )
+        
+
 
         

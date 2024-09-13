@@ -6,7 +6,7 @@ from aws_cdk import (
     Duration,
     Stack,
     aws_ecr_assets as ecr_assets,
-    aws_iam as iam
+    aws_s3 as s3
 )
 
 
@@ -37,6 +37,8 @@ class VpcStack(Stack):
             ],
         )
 
+        vpc.add_flow_log("FlowLog")
+
         #create a ECS Cluster in the VPC
 
         cluster = ecs.Cluster(
@@ -49,3 +51,12 @@ class VpcStack(Stack):
         )
 
         self.ecs_cluster = cluster
+
+        #Access Logs specific S3 Bucket
+
+        # bucket = s3.Bucket(self, "AcecssLog",
+        #     encryption=s3.BucketEncryption.S3_MANAGED,
+        #     enforce_ssl=True
+        # )
+
+        # self.access_logs_bucket = bucket

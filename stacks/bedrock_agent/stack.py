@@ -6,7 +6,8 @@ from aws_cdk import (
     aws_lambda as _lambda,
     CfnOutput,
     aws_iam as iam,
-    aws_bedrock as bedrock
+    aws_bedrock as bedrock,
+    ArnFormat
 )
 
 class ObservabilityAssistantAgent(cdk.Stack):
@@ -20,6 +21,13 @@ class ObservabilityAssistantAgent(cdk.Stack):
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         # The code that defines your stack goes here
+
+        knowledgebase_arn = Stack.format_arn(self, 
+                                             service="bedrock", 
+                                             resource="knowledge-base", 
+                                             resource_name=knowledgebase_id,
+                                             arn_format=ArnFormat.SLASH_RESOURCE_NAME
+                                             )
         
         #Create a Bedrock agent execution role
         agent_role = iam.Role(
@@ -42,8 +50,8 @@ class ObservabilityAssistantAgent(cdk.Stack):
 
         #Add policy to retrieve from bedrock knowledgebase 
         agent_role.add_to_policy(iam.PolicyStatement(
-            actions=["bedrock:Retrieve"], #TODO: Restrict to knowledgebase
-            resources=["*"],
+            actions=["bedrock:Retrieve"],
+            resources=[knowledgebase_arn],
         ))
 
         # Add instructions for the bedrock agent
@@ -135,6 +143,8 @@ class ObservabilityAssistantAgent(cdk.Stack):
             )
         )
 
+        self.bedrock_agent = agent
+
         # _lambda.CfnPermission(
         #     self,
         #     "LogsLambdaPermissions",
@@ -153,5 +163,15 @@ class ObservabilityAssistantAgent(cdk.Stack):
             source_arn=agent.attr_agent_arn
         )
 
-        self.bedrock_agent_id = agent.attr_agent_id
+        bedrock_agent_alias = bedrock.CfnAgentAlias(
+            self,
+            "observability-assistant-agent-alias",
+            agent_id=agent.attr_agent_id,
+            agent_alias_name="observability-assistant-agent-alias",
+            # description="Observability Assistant Agent Alias"
+        )
+
+        self.bedrock_agent_alias = bedrock_agent_alias
+
+        # self.bedrock_agent_id = agent.attr_agent_id
 

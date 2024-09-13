@@ -10,11 +10,13 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_ecs_patterns as ecs_patterns,
     aws_ecr_assets as ecr_assets,
+    aws_ec2 as ec2,
     # aws_lambda_python_alpha as lambda_python,
     BundlingOptions,
     aws_secretsmanager as sm,
     CfnOutput,
-    ArnFormat
+    ArnFormat,
+    aws_logs as logs
 )
 # from aws_cdk.aws_lambda_python_alpha import (
 #     PythonFunction,
@@ -93,6 +95,11 @@ class LambdaStack(Stack):
                                             directory="stacks/logs_action_group/lambda",
                                             platform=ecr_assets.Platform.LINUX_ARM64
                                             )  
+        
+        log_group = logs.LogGroup(self, "LogGroup",
+                                      log_group_name="logs-action-group",
+                                       removal_policy=cdk.RemovalPolicy.DESTROY )
+        # cloudwatch_log_group_name = "logs-action-group"
 
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -104,15 +111,16 @@ class LambdaStack(Stack):
             desired_count=1,
             public_load_balancer=False,
             load_balancer_name="logs-action-group",
+            open_listener=False,
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=application_image,
                 container_port=80,
+                log_driver=ecs.LogDriver.aws_logs(log_group=log_group,mode=ecs.AwsLogDriverMode.NON_BLOCKING, stream_prefix='logs-action-group'),
                 environment={
                     "POWERTOOLS_SERVICE_NAME": "LogsLambdaAgent",
                     "POWERTOOLS_METRICS_NAMESPACE": "LogsLambdaAgent",
                     "API_SECRET_NAME": secret.secret_name
                 },
-                #TODO: Log Group name
             ),
         )
 
@@ -138,16 +146,15 @@ class LambdaStack(Stack):
             "LINUX",
         )
 
+        # cloudwatch_log_group_arn = Stack.format_arn(self,service="logs",resource="log-group",resource_name=cloudwatch_log_group_name,arn_format=ArnFormat.COLON_RESOURCE_NAME)
         # Grant access to the fargate service IAM access to invoke Bedrock runtime API calls
         fargate_service.task_definition.task_role.add_to_policy(iam.PolicyStatement( 
             effect=iam.Effect.ALLOW, 
-            resources=["*"], 
+            resources=[log_group.log_group_arn], 
             actions=[
-                "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents","xray:PutTelemetryRecords","xray:PutTraceSegments"
+                "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents",
             ])
         )
         secret.grant_read(fargate_service.task_definition.task_role)
+        fargate_service.load_balancer.connections.security_groups[0].add_ingress_rule(peer=ec2.Peer.ipv4(ecs_cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(80))
         self.fargate_service = fargate_service
-        
-        
-    
