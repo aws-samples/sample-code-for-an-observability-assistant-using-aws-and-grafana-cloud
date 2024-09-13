@@ -1,6 +1,10 @@
 
 # Sample code for an Observability Assistant for Grafana Cloud using AWS Bedrock Agents
 
+## Description
+
+This repository hosts a sample code for creating an observability assistant for Grafana Cloud using AWS Bedrock Agents.
+
 ## Pre Deployment Actions
 ### Create Self Signed Certificate and Upload to ACM
 
