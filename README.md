@@ -1,66 +1,5 @@
 
-# Welcome to your CDK Python project
-
-You should explore the contents of this project. It demonstrates a CDK app with an instance of a stack (`grafana_observability_assistant_cdk_stack`)
-which contains an Amazon SQS queue that is subscribed to an Amazon SNS topic.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-This project is set up like a standard Python project.  The initialization process also creates
-a virtualenv within this project, stored under the .venv directory.  To create the virtualenv
-it assumes that there is a `python3` executable in your path with access to the `venv` package.
-If for any reason the automatic creation of the virtualenv fails, you can create the virtualenv
-manually once the init process completes.
-
-To manually create a virtualenv on MacOS and Linux:
-
-```
-$ python3 -m venv .venv
-```
-
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-You can now begin exploring the source code, contained in the hello directory.
-There is also a very trivial test included that can be run like this:
-
-```
-$ pytest
-```
-
-To add additional dependencies, for example other CDK libraries, just add to
-your requirements.txt file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+# Sample code for an Observability Assistant for Grafana Cloud using AWS Bedrock Agents
 
 ## Pre Deployment Actions
 ### Create Self Signed Certificate and Upload to ACM
@@ -69,6 +8,30 @@ command.
 * Cert - `openssl req -new -x509 -nodes -days 365    -key ca-key.pem    -out ca-cert.pem`
 * Upload to ACM - `aws acm import-certificate --certificate fileb://ca-cert.pem --private-key fileb://ca-key.pem`
 * Note the ARN and mention that under `config/development.yaml` file
+
+### Adding Secrets to Secrets Manager, one each for `Loki` and `Prometheus`. The secrets MUST be in the following format
+
+```
+{
+"baseUrl" : "FILL ME WITH THE BASE URL FOR YOUR LOKI OR PROMETHEUS",
+"username":"FILL ME WITH THE USERNAME FOR LOKI OR PROMETHEUS",
+"apikey":"FILL IN WITH THE API KEY FOR LOKI OR PROMETHEUS"
+}
+```
+
+Note the secret names from secrets manager under `config/development` at the `LogsSecretName` for Loki and `MetricsSecretName` for Prometheus
+
+## Deploy Commands
+
+* Bootstrap CDK Environment - `cdk boostrap`
+* Change the mutability of the ECR registry created. If you dont do this then docker push command may fail
+* CDK Synth - `cdk synth --context environment=development`
+* CDK Deploy - `cdk deploy --context environment=development --all`
+* CDK Deploy (no prompt) - `cdk deploy --context environment=development --all --require-approval never`
+
+Deployment will create the following implementation
+
+![image](./images/grafana-genai-asssistant.jpeg)
 
 ## Post Deployment actions
 
