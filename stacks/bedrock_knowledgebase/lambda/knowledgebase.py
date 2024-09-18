@@ -21,7 +21,9 @@ except Exception as e:
 @helper.create
 def create(event, context):   
     logger.info("Got Create")
-    sleep(15)
+    sleep(15) 
+    # This sleep is to ensure the datapolicy is added to the opensearch vector DB, otherwise the KB creation fails with
+    # the reason of access denied
     try:
         response = client.create_knowledge_base(
                name='grafana-bedrock-kb-docs',
@@ -103,7 +105,24 @@ def create(event, context):
         )
 
         logger.info(add_datasource_response)
-        return response['knowledgeBase']['knowledgeBaseId']
+
+        while True:
+            datasource_status = client.get_data_source(knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId'],
+                                                       dataSourceId=add_datasource_response['dataSource']['dataSourceId'])
+            if datasource_status['dataSource']['status'] == 'AVAILABLE':
+                break
+            sleep(5)
+        
+        start_ingestion_job_response = client.start_ingestion_job(
+            dataSourceId=add_datasource_response['dataSource']['dataSourceId'],
+            knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId']
+        )
+
+        logger.info(start_ingestion_job_response)
+
+        helper.PhysicalResourceId=response['knowledgeBase']['knowledgeBaseId']   
+        event['PhysicalResourceId']=response['knowledgeBase']['knowledgeBaseId']    
+        return {"PhysicalResourceId":response['knowledgeBase']['knowledgeBaseId']}
     except Exception as e:
         print(e)
 
