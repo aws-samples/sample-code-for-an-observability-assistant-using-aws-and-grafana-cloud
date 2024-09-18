@@ -1,0 +1,13 @@
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Licensed under the Massachusetts Institute of Technology (MIT) license
+
+**********************
+THIRD PARTY COMPONENTS
+**********************
+This software includes third party software subject to the following copyrights:
+
+uvicorn under the BSD license
+fastapi under the Massachusetts Institute of Technology (MIT) license
+pydantic under the Massachusetts Institute of Technology (MIT) license
+requests under Apache 2.0 license
+streamlit under Apache 2.0 license
