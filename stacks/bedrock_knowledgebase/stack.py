@@ -197,6 +197,7 @@ class AossStack(Stack):
                     "bedrock:GetDataSource",
                     "bedrock:GetKnowledgeBase",
                     "bedrock:StartIngestionJob",
+                    "iam:PassRole"
             ],
             resources=["*"],
         ))   

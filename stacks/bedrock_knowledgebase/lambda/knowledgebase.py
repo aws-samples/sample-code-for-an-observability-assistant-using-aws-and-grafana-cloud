@@ -119,10 +119,8 @@ def create(event, context):
         )
 
         logger.info(start_ingestion_job_response)
-
-        helper.PhysicalResourceId=response['knowledgeBase']['knowledgeBaseId']   
-        event['PhysicalResourceId']=response['knowledgeBase']['knowledgeBaseId']    
-        return {"PhysicalResourceId":response['knowledgeBase']['knowledgeBaseId']}
+        helper.Data.update({"knowledgeBaseId": response['knowledgeBase']['knowledgeBaseId']})
+        return response['knowledgeBase']['knowledgeBaseId']
     except Exception as e:
         print(e)
 
