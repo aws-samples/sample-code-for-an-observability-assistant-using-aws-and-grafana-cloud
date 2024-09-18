@@ -208,9 +208,16 @@ class AossStack(Stack):
                                                   provider_function_name="custom-lambda-provider",
                                                   )
         trigger_create_kb_lambda_cr = CustomResource(self, "BedrockKbCustomResourceTrigger",
-                                                  service_token=trigger_create_kb_lambda_provider.service_token)
+                                                  service_token=trigger_create_kb_lambda_provider.service_token,
+                                                  removal_policy=RemovalPolicy.DESTROY,
+                                                  resource_type="Custom::BedrockKbCustomResourceTrigger",
+                                                  )
         
         trigger_create_kb_lambda_cr.node.add_dependency(bedrock_kb_role)
         trigger_create_kb_lambda_cr.node.add_dependency(opensearch_serverless_collection)
         trigger_create_kb_lambda_cr.node.add_dependency(create_bedrock_kb_lambda)
         trigger_create_kb_lambda_cr.node.add_dependency(opensearch_serverless_access_policy)
+        trigger_create_kb_lambda_provider.node.add_dependency(opensearch_serverless_access_policy)
+
+        self.bedrock_kb_id = trigger_create_kb_lambda_cr.ref
+        # CfnOutput(self, "BedrockKBId", value=trigger_create_kb_lambda_cr.ref)
