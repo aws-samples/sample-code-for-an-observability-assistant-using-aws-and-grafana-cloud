@@ -6,7 +6,6 @@
 # CMD [ "app.lambda_handler" ]
 
 FROM python:3.12.5
-USER logsactiongroup
 EXPOSE 80
 COPY . .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt

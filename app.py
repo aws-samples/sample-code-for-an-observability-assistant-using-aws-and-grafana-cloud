@@ -7,6 +7,7 @@ from stacks.logs_action_group.stack import LambdaStack as LogsActionGroupStack
 from stacks.metrics_action_group.stack import LambdaStack as MetricsActionGroupStack
 from stacks.bedrock_agent.stack import ObservabilityAssistantAgent
 from stacks.vpc.stack import VpcStack
+from stacks.bedrock_knowledgebase.stack import AossStack
 from cdk_nag import ( AwsSolutionsChecks, NagSuppressions )
 import os
 
@@ -26,8 +27,10 @@ bedrock_agent_stack = ObservabilityAssistantAgent(app,
                             "grafana-observability-assistant", 
                             knowledgebase_id=conf.get('KnowledgeBaseId'),
                             # logs_lambda=logs_lambda_stack.lambda_function,
-                            metrics_lambda=metrics_lambda_stack.lambda_function,
+                            metrics_lambda=metrics_lambda_stack.lambda_function
 )
+knowledgebase_stack = AossStack(app, "grafana-knowledgebase",
+                            bedrock_agent = bedrock_agent_stack.bedrock_agent)
 streamlit_stack = WebAppStack(app, 
             "grafana-streamlit-webapp",
             knowledgebase_id=conf.get('KnowledgeBaseId'),
@@ -52,5 +55,6 @@ NagSuppressions.add_stack_suppressions(logs_lambda_stack, [{"id":"AwsSolutions-I
 NagSuppressions.add_stack_suppressions(metrics_lambda_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
 NagSuppressions.add_stack_suppressions(bedrock_agent_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
 NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-IAM5", "reason":"not coded in this solution"}])
-# NagSuppressions.add_stack_suppressions(streamlit_stack, [{"id":"AwsSolutions-IAM5", "reason":"All created policies are already restricted and no wild card"}])
+NagSuppressions.add_stack_suppressions(knowledgebase_stack, [{"id":"AwsSolutions-IAM5", "reason":"Premissive permissions required as per aoss documentation."}])
+NagSuppressions.add_stack_suppressions(knowledgebase_stack, [{"id":"AwsSolutions-IAM4", "reason":"Policies are set by Custom Resource."}])
 app.synth()

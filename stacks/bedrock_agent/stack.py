@@ -7,8 +7,9 @@ from aws_cdk import (
     CfnOutput,
     aws_iam as iam,
     aws_bedrock as bedrock,
-    ArnFormat
+    ArnFormat,
 )
+import hashlib
 
 class ObservabilityAssistantAgent(cdk.Stack):
 
@@ -173,5 +174,62 @@ class ObservabilityAssistantAgent(cdk.Stack):
 
         self.bedrock_agent_alias = bedrock_agent_alias
 
-        # self.bedrock_agent_id = agent.attr_agent_id
+        #Create Guardrail configs
+
+        # Create a guardrail configuration for the bedrock agent
+        cfn_guardrail = bedrock.CfnGuardrail(self, "CfnGuardrail",
+            name="guardrail-observability-assistant", # TODO : Generate based on self.stack_id
+            description="Guardrail configuration for the bedrock agent",
+            blocked_input_messaging="I'm sorry, I can't accept your prompt, as your prompt been blocked buy Guardrails.",
+            blocked_outputs_messaging="I'm sorry, I can't answer that, as the response has been blocked buy Guardrails.",
+            # Filter strength for incoming user prompts and outgoing agent responses
+            content_policy_config=bedrock.CfnGuardrail.ContentPolicyConfigProperty(
+                filters_config=[
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="NONE",
+                        output_strength="NONE",
+                        type="PROMPT_ATTACK"
+                    ),
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="HIGH",
+                        output_strength="HIGH",
+                        type="MISCONDUCT"
+                    ),
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="HIGH",
+                        output_strength="HIGH",
+                        type="INSULTS"
+                    ),
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="HIGH",
+                        output_strength="HIGH",
+                        type="HATE"
+                    ),
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="HIGH",
+                        output_strength="HIGH",
+                        type="SEXUAL"
+                    ),
+                    bedrock.CfnGuardrail.ContentFilterConfigProperty(
+                        input_strength="HIGH",
+                        output_strength="HIGH",
+                        type="VIOLENCE"
+                    )                    
+                ]
+            )
+        )
+
+        # Create a Guardrail version
+        cfn_guardrail_version = bedrock.CfnGuardrailVersion(self, "MyCfnGuardrailVersion",
+            guardrail_identifier=cfn_guardrail.attr_guardrail_id,
+            description="This is the deployed version of the guardrail configuration",
+        )
+
+        #Enable Guardrail for the agent
+
+
+        agent.guardrail_configuration = bedrock.CfnAgent.GuardrailConfigurationProperty(
+            guardrail_version=cfn_guardrail_version.attr_version,
+            guardrail_identifier=cfn_guardrail.attr_guardrail_arn
+        )
 
