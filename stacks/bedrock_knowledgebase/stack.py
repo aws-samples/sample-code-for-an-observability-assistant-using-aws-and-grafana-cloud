@@ -202,20 +202,13 @@ class AossStack(Stack):
             resources=["*"],
         ))   
 
-        #Create a IAM role to be used by Provider Lambda function
-        provider_lambda_role = iam.Role(self, 'ProviderLambdaRole',
-            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole'),
-            ],
-        )
 
         trigger_create_kb_lambda_provider = cr.Provider(self,"BedrockKbLambdaProvider",
                                                   on_event_handler=create_bedrock_kb_lambda,
-                                                  provider_function_name="custom-lambda-provider")
+                                                  provider_function_name="custom-lambda-provider",
+                                                  )
         trigger_create_kb_lambda_cr = CustomResource(self, "BedrockKbCustomResourceTrigger",
                                                   service_token=trigger_create_kb_lambda_provider.service_token)
-        
         
         trigger_create_kb_lambda_cr.node.add_dependency(bedrock_kb_role)
         trigger_create_kb_lambda_cr.node.add_dependency(opensearch_serverless_collection)
