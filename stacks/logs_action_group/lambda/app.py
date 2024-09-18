@@ -14,8 +14,7 @@ app = FastAPI()
 app.openapi_version = "3.0.0"
 tracer = Tracer()
 logger = Logger()
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(logging.DEBUG)
+
 metrics = Metrics(namespace="LogsLambdaAgent")
 secretsmanager = parameters.SecretsProvider()
 
@@ -95,7 +94,6 @@ def get_available_labels() -> Annotated[dict, Body(description="List of availabl
         response = session.get(base_url).json()
         logger.info("get_available_labels - HTTP 200")
         #append status code in the response
-        # response['httpStatusCode'] = response.status_code
         logger.info(response)
         logger.info(type(response))
         return response

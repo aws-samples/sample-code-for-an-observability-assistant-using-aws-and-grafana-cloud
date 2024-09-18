@@ -11,16 +11,12 @@ from aws_cdk import (
     aws_ecs_patterns as ecs_patterns,
     aws_ecr_assets as ecr_assets,
     aws_ec2 as ec2,
-    # aws_lambda_python_alpha as lambda_python,
     BundlingOptions,
     aws_secretsmanager as sm,
     CfnOutput,
     ArnFormat,
     aws_logs as logs
 )
-# from aws_cdk.aws_lambda_python_alpha import (
-#     PythonFunction,
-# )
 class LambdaStack(Stack):
 
     def __init__(self, 
@@ -36,61 +32,6 @@ class LambdaStack(Stack):
         #Get Secret Manager secret ARN from the name
         secret = sm.Secret.from_secret_name_v2(self, "Secret", secret_name)
 
-        # lambda_function = _lambda.Function(
-        #     self,
-        #     "logs-action-group",
-        #     runtime=_lambda.Runtime.PYTHON_3_12,
-        #     code=_lambda.Code.from_asset(
-        #         "stacks/logs_action_group/lambda",
-        #         bundling=BundlingOptions(
-        #             image=_lambda.Runtime.PYTHON_3_12.bundling_image,
-        #             command=[
-        #                 "bash",
-        #                 "-c",
-        #                 "pip install --no-cache -r requirements.txt -t /asset-output && cp -au . /asset-output",
-        #             ],
-        #         ),
-        #     ),
-        #     handler="app.lambda_handler",
-        #     timeout=cdk.Duration.seconds(10),
-        #     description="Logs Action Group Lambda Function",
-        #     function_name="logs-action-group",
-        #     tracing=_lambda.Tracing.ACTIVE,
-        #     application_log_level_v2 = _lambda.ApplicationLogLevel.INFO,
-        #     logging_format = _lambda.LoggingFormat.JSON,
-        #     environment = {
-        #         "POWERTOOLS_SERVICE_NAME": "LogsLambdaAgent",
-        #         "POWERTOOLS_METRICS_NAMESPACE": "LogsLambdaAgent",
-        #         "API_SECRET_NAME": secret.secret_name
-        #     },
-        #     initial_policy=[
-        #         iam.PolicyStatement(
-        #             actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-        #             resources=["*"]
-        #         )
-        #     ]
-        # )
-
-        #Export tge lambda arn
-        # CfnOutput(self, "LogsLambdaFunctionArn", value=lambda_function.function_arn, export_name="LogsLambdaFunctionArn")
-        # self.lambda_function = lambda_function
-        # secret.grant_read(lambda_function)
-
-        # bedrock_agent_arn = Stack.format_arn(self, 
-        #                                      service="bedrock", 
-        #                                      resource="agent", 
-        #                                      resource_name="*",
-        #                                      arn_format=ArnFormat.SLASH_RESOURCE_NAME
-        #                                      )
-        
-        #Grant bedrock agent permissions to invoke the lambda function
-        # lambda_function.add_permission(
-        #     "InvokeFromBedrockAgent",
-        #     principal=iam.ServicePrincipal("bedrock.amazonaws.com"),
-        #     action="lambda:InvokeFunction",
-        #     source_arn=bedrock_agent_arn
-        # )
-
         application_image = ecs.AssetImage.from_asset(
                                             directory="stacks/logs_action_group/lambda",
                                             platform=ecr_assets.Platform.LINUX_ARM64
@@ -99,7 +40,6 @@ class LambdaStack(Stack):
         log_group = logs.LogGroup(self, "LogGroup",
                                       log_group_name="logs-action-group",
                                        removal_policy=cdk.RemovalPolicy.DESTROY )
-        # cloudwatch_log_group_name = "logs-action-group"
 
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -146,7 +86,6 @@ class LambdaStack(Stack):
             "LINUX",
         )
 
-        # cloudwatch_log_group_arn = Stack.format_arn(self,service="logs",resource="log-group",resource_name=cloudwatch_log_group_name,arn_format=ArnFormat.COLON_RESOURCE_NAME)
         # Grant access to the fargate service IAM access to invoke Bedrock runtime API calls
         fargate_service.task_definition.task_role.add_to_policy(iam.PolicyStatement( 
             effect=iam.Effect.ALLOW, 

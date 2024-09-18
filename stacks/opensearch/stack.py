@@ -17,7 +17,7 @@ from constructs import Construct
 
 class AossStack(Stack):
 
-    def __init__(self, scope: Construct, id: str, bedrock_agent: bedrock.CfnAgent,  **kwargs) -> None:
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
       
         ### 1. Create an opensearch serverless collection
@@ -40,7 +40,7 @@ class AossStack(Stack):
         
         # Creating an opensearch serverless collection        
         opensearch_serverless_collection = opensearchserverless.CfnCollection(self, "OpenSearchServerless",
-            name="bedrock-kb",
+            name="observability-assistant-kb",
             description="An opensearch serverless vector database for the bedrock knowledgebase",
             standby_replicas="DISABLED",
             type="VECTORSEARCH"
@@ -49,28 +49,10 @@ class AossStack(Stack):
         opensearch_serverless_collection.add_dependency(opensearch_serverless_encryption_policy)
         opensearch_serverless_collection.add_dependency(opensearch_serverless_network_policy)
 
-
+        self.opensearch_serverless_collection=opensearch_serverless_collection
         ### 2. Creating an IAM role and permissions that we will need later on
 
-        # Create a bedrock knowledgebase role. Creating it here so we can reference it in the access policy for the opensearch serverless collection
-        bedrock_kb_role = iam.Role(self, 'bedrock-kb-role',
-            # role_name=("bedrock-kb-role-" + str(hashlib.sha384(hash_base_string).hexdigest())[:15]).lower(),
-            assumed_by=iam.ServicePrincipal('bedrock.amazonaws.com'),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name('AmazonBedrockFullAccess')
-            ],
-        )
-
-
-        # Add inline permissions to the bedrock knowledgebase execution role      
-        bedrock_kb_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["aoss:APIAccessAll"],
-                resources=[opensearch_serverless_collection.attr_arn],
-            )
-        )
-
+        
         ### 3. Create a custom resource that creates a new index in the opensearch serverless collection
 
         # Define the index name
@@ -82,7 +64,7 @@ class AossStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_12,
             handler='indexer.handler',
             code=_lambda.Code.from_asset(
-                "stacks/bedrock_knowledgebase/lambda",
+                "stacks/opensearch/lambda",
                 bundling=BundlingOptions(
                     image=_lambda.Runtime.PYTHON_3_12.bundling_image,
                     platform="linux/arm64",
@@ -117,11 +99,9 @@ class AossStack(Stack):
             resources=["*"],
         ))   
         
-        
-        # Finally we can create a complete data access policy for the collection that also includes the lambda function that will create the index. The policy must be a string and the resource contains the collections it is applied to.
-        opensearch_serverless_access_policy = opensearchserverless.CfnAccessPolicy(self, "OpenSearchServerlessAccessPolicy",
-            name=f"grafana-kb-data-access-policy",
-            policy=f"[{{\"Description\":\"Access for bedrock\",\"Rules\":[{{\"ResourceType\":\"index\",\"Resource\":[\"index/{opensearch_serverless_collection.name}/*\"],\"Permission\":[\"aoss:*\"]}},{{\"ResourceType\":\"collection\",\"Resource\":[\"collection/{opensearch_serverless_collection.name}\"],\"Permission\":[\"aoss:*\"]}}],\"Principal\":[\"{bedrock_agent.agent_resource_role_arn}\",\"{bedrock_kb_role.role_arn}\",\"{create_index_lambda.role.role_arn}\"]}}]",
+        opensearch_serverless_access_policy = opensearchserverless.CfnAccessPolicy(self, "IndexerLambdaDataPolicy",
+            name=f"indexer-lambda-policy",
+            policy=f"[{{\"Description\":\"Access for bedrock\",\"Rules\":[{{\"ResourceType\":\"index\",\"Resource\":[\"index/{opensearch_serverless_collection.name}/*\"],\"Permission\":[\"aoss:*\"]}},{{\"ResourceType\":\"collection\",\"Resource\":[\"collection/{opensearch_serverless_collection.name}\"],\"Permission\":[\"aoss:*\"]}}],\"Principal\":[\"{create_index_lambda.role.role_arn}\"]}}]",
             type="data",
             description="the data access policy for the opensearch serverless collection"
         )
@@ -161,63 +141,4 @@ class AossStack(Stack):
         trigger_lambda_cr.node.add_dependency(opensearch_serverless_access_policy)
         trigger_lambda_cr.node.add_dependency(opensearch_serverless_collection)
 
-        create_bedrock_kb_lambda = _lambda.Function(
-            self, "BedrockKbLambda",
-            runtime=_lambda.Runtime.PYTHON_3_12,
-            function_name="bedrock-kb-creator-custom-function",
-            handler='knowledgebase.handler',
-            timeout=Duration.minutes(5),
-            code=_lambda.Code.from_asset(
-                "stacks/bedrock_knowledgebase/lambda",
-                bundling=BundlingOptions(
-                    image=_lambda.Runtime.PYTHON_3_12.bundling_image,
-                    platform="linux/arm64",
-                    command=[
-                        "bash",
-                        "-c",
-                        "pip install --no-cache -r requirements.txt -t /asset-output && cp -au . /asset-output",
-                    ],
-                ),
-            ),
-            environment={
-                "BEDROCK_KB_ROLE_ARN": bedrock_kb_role.role_arn,
-                "COLLECTION_ARN": opensearch_serverless_collection.attr_arn,
-                "INDEX_NAME": index_name,
-                "REGION": self.region,
-            }
-        )
-
-        # Define IAM permission policy for the Lambda function. This function calls the OpenSearch Serverless API to create a new index in the collection and must have the "aoss" permissions. 
-        create_bedrock_kb_lambda.role.add_to_principal_policy(iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=[
-                    "bedrock:CreateDataSource",
-                    "bedrock:CreateKnowledgeBase",
-                    "bedrock:DeleteKnowledgeBase",
-                    "bedrock:GetDataSource",
-                    "bedrock:GetKnowledgeBase",
-                    "bedrock:StartIngestionJob",
-                    "iam:PassRole"
-            ],
-            resources=["*"],
-        ))   
-
-
-        trigger_create_kb_lambda_provider = cr.Provider(self,"BedrockKbLambdaProvider",
-                                                  on_event_handler=create_bedrock_kb_lambda,
-                                                  provider_function_name="custom-lambda-provider",
-                                                  )
-        trigger_create_kb_lambda_cr = CustomResource(self, "BedrockKbCustomResourceTrigger",
-                                                  service_token=trigger_create_kb_lambda_provider.service_token,
-                                                  removal_policy=RemovalPolicy.DESTROY,
-                                                  resource_type="Custom::BedrockKbCustomResourceTrigger",
-                                                  )
         
-        trigger_create_kb_lambda_cr.node.add_dependency(bedrock_kb_role)
-        trigger_create_kb_lambda_cr.node.add_dependency(opensearch_serverless_collection)
-        trigger_create_kb_lambda_cr.node.add_dependency(create_bedrock_kb_lambda)
-        trigger_create_kb_lambda_cr.node.add_dependency(opensearch_serverless_access_policy)
-        trigger_create_kb_lambda_provider.node.add_dependency(opensearch_serverless_access_policy)
-
-        self.bedrock_kb_id = trigger_create_kb_lambda_cr.ref
-        # CfnOutput(self, "BedrockKBId", value=trigger_create_kb_lambda_cr.ref)

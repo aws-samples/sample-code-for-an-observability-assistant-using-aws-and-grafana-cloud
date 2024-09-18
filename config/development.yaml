@@ -1,4 +1,3 @@
 LogsSecretName: grafana_logs_auth_key_pair
 MetricsSecretName: grafana_auth_key_pair
-KnowledgeBaseId: UT6Z0K441J
 SelfSignedCertARN: arn:aws:acm:us-west-2:256151769638:certificate/c3eaf331-1ad5-47d0-83d6-7d8add09bfa9

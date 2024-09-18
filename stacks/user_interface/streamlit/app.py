@@ -75,9 +75,6 @@ trace_type_headers = {
     "preProcessingTrace": "Pre-Processing",
     "orchestrationTrace": "Orchestration",
     "postProcessingTrace": "Post-Processing",
-    # "knowledgeBaseLookupOutput": "KnowledgeBase-Processing",
-    # "actionGroupInvocationOutput": "ActionGroup-Processing",
-    # "fullTrace": "Full-Trace"
 }
 trace_info_types = ["invocationInput", "modelInvocationInput", "modelInvocationOutput", "observation", "rationale"]
 

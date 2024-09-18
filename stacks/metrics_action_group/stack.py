@@ -7,15 +7,12 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_iam as iam,
     aws_logs as logs,
-    # aws_lambda_python_alpha as lambda_python,
     BundlingOptions,
     aws_secretsmanager as sm,
     CfnOutput,
     ArnFormat
 )
-# from aws_cdk.aws_lambda_python_alpha import (
-#     PythonFunction,
-# )
+
 class LambdaStack(Stack):
 
     def __init__(self, 
@@ -72,21 +69,3 @@ class LambdaStack(Stack):
 
         self.lambda_function = lambda_function
         secret.grant_read(lambda_function)
-
-        # bedrock_agent_arn = Stack.format_arn(self, 
-        #                                      service="bedrock", 
-        #                                      resource="agent", 
-        #                                      resource_name="*",
-        #                                      arn_format=ArnFormat.SLASH_RESOURCE_NAME
-        #                                      )
-        
-        #Grant bedrock agent permissions to invoke the lambda function
-        # lambda_function.add_permission(
-        #     "InvokeFromBedrockAgent",
-        #     principal=iam.ServicePrincipal("bedrock.amazonaws.com"),
-        #     action="lambda:InvokeFunction",
-        #     source_arn=bedrock_agent_arn
-        # )
-        
-        
-    

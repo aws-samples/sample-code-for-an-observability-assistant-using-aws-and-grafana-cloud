@@ -10,15 +10,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-# Initialise the helper, all inputs are optional, this example shows the defaults
-# helper = CfnResource(json_logging=True, log_level='DEBUG', boto_level='CRITICAL', sleep_on_delete=120, ssl_verify=None)
-
-# try:
-#     ## Init code goes here
-#     pass
-# except Exception as e:
-#     helper.init_failure(e)
-
 
 def create(event):   
     logger.info("Got Create")
@@ -120,7 +111,6 @@ def create(event):
         )
 
         logger.info(start_ingestion_job_response)
-        # helper.Data.update({"knowledgeBaseId": response['knowledgeBase']['knowledgeBaseId']})
         return {'PhysicalResourceId': response['knowledgeBase']['knowledgeBaseId']}
     except Exception as e:
         print(e)
@@ -139,8 +129,6 @@ def handler(event, context):
     request_type = event['RequestType'].lower()
     if request_type == 'create':
         return create(event)
-    # if request_type == 'update':
-    #     return on_update(event)
     if request_type == 'delete':
         return delete(event)
     raise Exception(f'Invalid request type: {request_type}')
