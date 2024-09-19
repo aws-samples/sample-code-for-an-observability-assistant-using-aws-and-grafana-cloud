@@ -29,7 +29,8 @@ bedrock_agent_stack = ObservabilityAssistantAgent(app,
                             "grafana-observability-assistant", 
                             # knowledgebase_id=conf.get('KnowledgeBaseId'),
                             opensearch_serverless_collection=knowledgebase_stack.opensearch_serverless_collection,
-                            metrics_lambda=metrics_lambda_stack.lambda_function
+                            metrics_lambda=metrics_lambda_stack.lambda_function,
+                            urls_to_crawl=conf.get('WebUrlsToCrawl')
 )
 streamlit_stack = WebAppStack(app, 
             "grafana-streamlit-webapp",

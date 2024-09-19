@@ -1,3 +1,16 @@
 LogsSecretName: grafana_logs_auth_key_pair
 MetricsSecretName: grafana_auth_key_pair
 SelfSignedCertARN: arn:aws:acm:us-west-2:256151769638:certificate/c3eaf331-1ad5-47d0-83d6-7d8add09bfa9
+WebUrlsToCrawl:
+  - https://prometheus.io/docs/prometheus/latest/querying/
+  - https://grafana.com/docs/loki/latest/query/
+  - https://grafana.com/blog/2020/02/04/introduction-to-promql-the-prometheus-query-language/
+  - https://grafana.com/blog/2021/01/29/basics-and-best-practices-for-getting-started-with-promql/
+  - https://prometheus.io/docs/concepts/metric_types/
+  - https://prometheus.io/docs/practices/naming/
+  - https://prometheus.io/docs/concepts/jobs_instances/
+  - https://promlabs.com/blog/2020/06/18/the-anatomy-of-a-promql-query/
+  - https://promlabs.com/promql-cheat-sheet/
+  - https://promlabs.com/blog/
+  - https://grafana.com/blog/2021/08/04/how-to-use-promql-joins-for-more-effective-queries-of-prometheus-metrics-at-scale/
+  - https://github.com/kubernetes/kube-state-metrics/tree/main/docs/metrics

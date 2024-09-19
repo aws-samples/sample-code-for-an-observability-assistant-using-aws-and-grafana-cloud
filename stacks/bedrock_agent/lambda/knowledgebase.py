@@ -49,6 +49,10 @@ def create(event):
                 break
             sleep(5)
 
+        obj_url_to_crawl = eval(os.environ["URLS_TO_CRAWL"])
+        #Create a json object with every URL in the obj_url_to_crawl
+        urls = [{"url": url} for url in obj_url_to_crawl]
+
         add_datasource_response = client.create_data_source(
             dataDeletionPolicy='DELETE',
             dataSourceConfiguration={
@@ -61,23 +65,24 @@ def create(event):
                     },
                     'sourceConfiguration': {
                         'urlConfiguration': {
-                            'seedUrls': [
-                                {
-                                    'url': 'https://promlabs.com/promql-cheat-sheet/'
-                                },
-                                {
-                                    'url': 'https://isitobservable.io/observability/prometheus/how-to-build-a-promql-prometheus-query-language'
-                                },
-                                {
-                                    'url': 'https://prometheus.io/docs/prometheus/latest/querying/'
-                                },
-                                {
-                                    'url': 'https://grafana.com/docs/loki/latest/query/'
-                                },
-                                {
-                                    'url': 'https://github.com/grafana/loki/tree/main/docs/sources/query'
-                                }
-                            ]
+                            'seedUrls': urls
+                            # [
+                            #     {
+                            #         'url': 'https://promlabs.com/promql-cheat-sheet/'
+                            #     },
+                            #     {
+                            #         'url': 'https://isitobservable.io/observability/prometheus/how-to-build-a-promql-prometheus-query-language'
+                            #     },
+                            #     {
+                            #         'url': 'https://prometheus.io/docs/prometheus/latest/querying/'
+                            #     },
+                            #     {
+                            #         'url': 'https://grafana.com/docs/loki/latest/query/'
+                            #     },
+                            #     {
+                            #         'url': 'https://github.com/grafana/loki/tree/main/docs/sources/query'
+                            #     }
+                            # ]
                         }
                     }
                 }

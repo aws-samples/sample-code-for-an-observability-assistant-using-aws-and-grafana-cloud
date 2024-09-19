@@ -24,6 +24,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
                  construct_id: str,
                  metrics_lambda: _lambda.Function,
                  opensearch_serverless_collection: opensearchserverless.CfnCollection,
+                 urls_to_crawl: list,
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -84,6 +85,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
                 "COLLECTION_ARN": opensearch_serverless_collection.attr_arn,
                 "INDEX_NAME": index_name,
                 "REGION": self.region,
+                "URLS_TO_CRAWL": str(urls_to_crawl)
             }
         )
 
