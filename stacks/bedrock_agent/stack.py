@@ -146,6 +146,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
                     "bedrock:GetDataSource",
                     "bedrock:GetKnowledgeBase",
                     "bedrock:StartIngestionJob",
+                    "bedrock:GetIngestionJob",
                     "iam:PassRole"
             ],
             resources=["*"],
