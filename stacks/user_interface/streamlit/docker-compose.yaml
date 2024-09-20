@@ -1,0 +1,17 @@
+services:
+  streamlit:
+    container_name: streamlit
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    ports:
+      - 8501:8501
+    environment:
+      - BEDROCK_AGENT_ID=
+      - BEDROCK_AGENT_ALIAS_ID=
+      - KNOWLEDGEBASE_ID=
+      - FUNCTION_CALLING_URL=
+      - AWS_DEFAULT_REGION=
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_ACCESS_KEY=
+      - AWS_SESSION_TOKEN=

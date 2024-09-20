@@ -6,6 +6,7 @@ output_text = ""
 citations = []
 trace = {}
 import requests
+requests.packages.urllib3.add_stderr_logger() 
 
 knowledge_base_id = os.environ.get("KNOWLEDGEBASE_ID")
 function_calling_url = os.environ.get("FUNCTION_CALLING_URL")
@@ -123,14 +124,17 @@ def get_data_from_api(parameters):
     path_to_invoke = "http://"+function_calling_url+return_function_response['apiPath'] #TODO: Pass the protocol from ALB
     # method_to_invoke = return_function_response['httpMethod']
     parameters_to_pass = return_function_response['parameters']
+    # Check if the parameters_to_pass is not None
+
+    if not len(parameters_to_pass) == 0:
+        parameters_to_pass = parameters_to_pass[0]['value']
     # {'actionGroup': 'logs-api-caller', 'actionInvocationType': 'RESULT', 'apiPath': '/get-available-logql-labels', 'httpMethod': 'GET', 'parameters': []}
     session = requests.Session()
-    session.params = parameters_to_pass
-    print(session.params)
+    session.params = {
+            'logql': parameters_to_pass
+    }
+    
     response = session.get(path_to_invoke).json()
-    print("============")
-    print(response)
-    print(type(response))
 
     response_body = {"application/json": {"body": json.dumps(response)}}
     api_response = [{

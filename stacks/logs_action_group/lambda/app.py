@@ -1,19 +1,25 @@
 from fastapi import FastAPI, Query, Body
-from aws_lambda_powertools import Logger
+# from aws_lambda_powertools import Logger
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools import Metrics
 from aws_lambda_powertools.metrics import MetricUnit
-# import logging
+import logging
 import requests
 from requests.exceptions import HTTPError
 from aws_lambda_powertools.utilities import parameters
-import os
+import os,sys
 from typing_extensions import Annotated
 
 app = FastAPI()
 app.openapi_version = "3.0.0"
 tracer = Tracer()
-logger = Logger()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler(sys.stdout)
+log_formatter = logging.Formatter("%(asctime)s [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] [%(levelname)s] %(name)s: %(message)s")
+stream_handler.setFormatter(log_formatter)
+logger.addHandler(stream_handler)
+
 
 metrics = Metrics(namespace="LogsLambdaAgent")
 secretsmanager = parameters.SecretsProvider()
@@ -55,12 +61,12 @@ def invoke_logql_statement(
         # Using this because directly accessing the promql input is truncating the records after comma
         # This does bypass the typing extension validation, but good enough to generate the openapi spec
         # without compromising 
-        print(app.current_event.parameters[0]['value'])
+        logger.info(logql)
         session.params = {
-            'query': app.current_event.parameters[0]['value'],
+            'query': logql,
             'limit': 5000
         }
-        logger.debug(session.params)
+        logger.info(session.params)
         response = session.get(base_url).json()
         return response
     except Exception as e:
