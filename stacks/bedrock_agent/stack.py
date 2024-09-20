@@ -14,6 +14,9 @@ from aws_cdk import (
     aws_opensearchserverless as opensearchserverless,
     RemovalPolicy,
     custom_resources as cr,
+    aws_s3_deployment as s3d,
+    aws_s3 as s3,
+    Size
 )
 import hashlib
 
@@ -62,6 +65,47 @@ class ObservabilityAssistantAgent(cdk.Stack):
             description="the data access policy for the opensearch serverless collection"
         )
 
+        # Create S3 bucket for the knowledgebase assets
+        kb_bucket = s3.Bucket(self, "Knowledgebase",
+            # bucket_name=("observability-assistant-kb-" + self.account+"-"+self.region).lower(),
+            auto_delete_objects=True,
+            versioned=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            # server_access_logs_bucket=logs_bucket,
+            # server_access_logs_prefix="knowledgebase-access-logs/",
+            intelligent_tiering_configurations=[
+                s3.IntelligentTieringConfiguration(
+                name="s3_tiering",
+                archive_access_tier_time=Duration.days(90),
+                deep_archive_access_tier_time=Duration.days(180),
+                prefix="prefix",
+                tags=[s3.Tag(
+                    key="key",
+                    value="value"
+                )]
+             )],      
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    noncurrent_version_expiration=Duration.days(7)
+                )
+            ],
+        )
+
+        kb_bucket.grant_read_write(iam.ServicePrincipal("bedrock.amazonaws.com"))
+        kb_bucket.grant_read_write(bedrock_kb_role)
+
+        # Upload doc assets to S3 bucket. may contain large files so adjust the ephemeral storage size and increase timeout
+        upload_docs = s3d.BucketDeployment(self, "KnowledgebaseDocs",
+            sources=[s3d.Source.asset("assets/")],
+            destination_bucket=kb_bucket,
+            destination_key_prefix="docs/",
+            ephemeral_storage_size=Size.gibibytes(1),
+            memory_limit=1024,
+        )
+
         create_bedrock_kb_lambda = _lambda.Function(
             self, "BedrockKbLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -85,9 +129,12 @@ class ObservabilityAssistantAgent(cdk.Stack):
                 "COLLECTION_ARN": opensearch_serverless_collection.attr_arn,
                 "INDEX_NAME": index_name,
                 "REGION": self.region,
-                "URLS_TO_CRAWL": str(urls_to_crawl)
+                "URLS_TO_CRAWL": str(urls_to_crawl),
+                "KB_BUCKET":kb_bucket.bucket_arn
             }
         )
+
+        create_bedrock_kb_lambda.node.add_dependency(upload_docs)
 
         # Define IAM permission policy for the Lambda function. This function calls the OpenSearch Serverless API to create a new index in the collection and must have the "aoss" permissions. 
         create_bedrock_kb_lambda.role.add_to_principal_policy(iam.PolicyStatement(

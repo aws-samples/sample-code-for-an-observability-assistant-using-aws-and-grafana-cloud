@@ -25,6 +25,17 @@ This repository hosts a sample code for creating an observability assistant for 
 
 Note the secret names from secrets manager under `config/development` at the `LogsSecretName` for Loki and `MetricsSecretName` for Prometheus
 
+### Clone the Github Repo that you need to be used as a Knowledgebase for AWS Bedrock
+
+You **MUST** clone in `assets` folder.
+
+The two repositories suggested are 
+
+```
+https://github.com/kubernetes/kube-state-metrics/tree/main/docs/metrics
+https://github.com/grafana/loki/tree/main/docs/sources/query
+```
+
 ## Deploy Commands
 
 * Bootstrap CDK Environment - `cdk boostrap`
@@ -39,4 +50,9 @@ Deployment will create the following implementation
 
 ## Post Deployment actions
 
-* Create a user to login in the Cognito Pool
+* To access the UI - Create a user to login in the Cognito Pool and access the load balancer URL in the output. Use the login crendential from the Cognito Pool. Ignore the certificate warning
+
+
+## Note
+
+* If you add URLs to crawl in config/development.yaml file, then you must delete the stack `grafana-observability-assistant` (and its dependent stacks) by running `cdk destroy grafana-observability-assistant --context environment=development` and create again by running `cdk deploy grafana-observability-assistant --context environment=development`. This is because currently, the Custom Resource Lambda function which creates the Bedrock Knowledgebase (`stacks/bedrock_agent/lambda/knowledgebase.py`) doesnt implements any update method. Pull requests are appreciated.

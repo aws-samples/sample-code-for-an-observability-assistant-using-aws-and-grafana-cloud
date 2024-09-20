@@ -22,3 +22,4 @@ venv.bak/
 cdk.out/
 ca-cert.pem
 ca-key.pem
+assets/*

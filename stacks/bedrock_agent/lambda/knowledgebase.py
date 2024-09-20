@@ -101,21 +101,72 @@ def create(event):
             }
         )
 
-        logger.info(add_datasource_response)
+        add_s3_datasource_response = client.create_data_source(
+            dataDeletionPolicy='DELETE',
+            dataSourceConfiguration={
+                'type': 'S3',
+                's3Configuration': {
+                    'bucketArn': os.environ["KB_BUCKET"],
+                    # 'bucketOwnerAccountId': 'string',
+                    # 'inclusionPrefixes': [
+                    #     'string',
+                    # ]
+                },
+            },
+            description='The S3 data source for understanding how logql statements be constructed',
+            knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId'],
+            name='s3-datasource',
+            vectorIngestionConfiguration={
+                'chunkingConfiguration': {
+                    'chunkingStrategy': 'FIXED_SIZE',
+                    'fixedSizeChunkingConfiguration': {
+                        'maxTokens': 300,
+                        'overlapPercentage': 20
+                    },
+                }
+            }
+        )
 
+        # logger.info(add_datasource_response)
+
+        
+        
+        while True:
+            s3_datasource_status = client.get_data_source(knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId'],
+                                                       dataSourceId=add_s3_datasource_response['dataSource']['dataSourceId'])
+            if s3_datasource_status['dataSource']['status'] == 'AVAILABLE':
+                break
+            sleep(5)
+
+        start_s3_ingestion_job_response = client.start_ingestion_job(
+            dataSourceId=add_s3_datasource_response['dataSource']['dataSourceId'],
+            knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId']
+        )
+
+        while True:
+            s3_ingestion_job_status = client.get_ingestion_job(
+                knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId'],
+                dataSourceId=add_s3_datasource_response['dataSource']['dataSourceId'],
+                ingestionJobId=start_s3_ingestion_job_response['ingestionJob']['ingestionJobId']
+            )
+            if s3_ingestion_job_status['ingestionJob']['status'] == 'COMPLETE':
+                break
+            sleep(5)
+        
         while True:
             datasource_status = client.get_data_source(knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId'],
                                                        dataSourceId=add_datasource_response['dataSource']['dataSourceId'])
             if datasource_status['dataSource']['status'] == 'AVAILABLE':
                 break
             sleep(5)
-        
+
         start_ingestion_job_response = client.start_ingestion_job(
             dataSourceId=add_datasource_response['dataSource']['dataSourceId'],
             knowledgeBaseId=response['knowledgeBase']['knowledgeBaseId']
         )
 
         logger.info(start_ingestion_job_response)
+        logger.info(start_s3_ingestion_job_response)
         return {'PhysicalResourceId': response['knowledgeBase']['knowledgeBaseId']}
     except Exception as e:
         print(e)
