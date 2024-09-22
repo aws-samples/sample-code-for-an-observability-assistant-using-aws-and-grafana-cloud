@@ -135,7 +135,9 @@ def get_data_from_api(parameters):
     }
     
     response = session.get(path_to_invoke).json()
-
+    print("=====RESPONSE FROM API=======")
+    print(response)
+    print("=====RESPONSE FROM API ENDS=======")
     response_body = {"application/json": {"body": json.dumps(response)}}
     api_response = [{
                 'apiResult': {

@@ -9,7 +9,7 @@ from requests.exceptions import HTTPError
 from aws_lambda_powertools.utilities import parameters
 import os,sys
 from typing_extensions import Annotated
-
+requests.packages.urllib3.add_stderr_logger() 
 app = FastAPI()
 app.openapi_version = "3.0.0"
 tracer = Tracer()
@@ -58,17 +58,18 @@ def invoke_logql_statement(
         base_url = auth_key_pair['baseUrl']+"/loki/api/v1/query_range"
         session = requests.Session()
         session.auth = (auth_key_pair['username'], auth_key_pair['apikey'])
-        # Using this because directly accessing the promql input is truncating the records after comma
-        # This does bypass the typing extension validation, but good enough to generate the openapi spec
-        # without compromising 
-        logger.info(logql)
         session.params = {
-            'query': logql,
-            'limit': 5000
+                    'query': logql,
+                    'limit': 5000
         }
-        logger.info(session.params)
-        response = session.get(base_url).json()
+        response = session.get(base_url)
+        if response.headers['Content-Type'] == 'application/json':
+                    response = response.json()
+        else:
+                    response = {"error": response.content}
+        logger.info(response)
         return response
+            
     except Exception as e:
         logger.error(str(e))
         raise 

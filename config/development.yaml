@@ -13,4 +13,6 @@ WebUrlsToCrawl:
   - https://promlabs.com/promql-cheat-sheet/
   - https://promlabs.com/blog/
   - https://grafana.com/blog/2021/08/04/how-to-use-promql-joins-for-more-effective-queries-of-prometheus-metrics-at-scale/
-  - https://github.com/kubernetes/kube-state-metrics/tree/main/docs/metrics
+  - https://prometheus.io/docs
+  - https://kubernetes.io/docs/reference/instrumentation/metrics/
+  - https://www.cncf.io/blog/2023/03/13/how-to-use-kubernetes-events-for-effective-alerting-and-monitoring/

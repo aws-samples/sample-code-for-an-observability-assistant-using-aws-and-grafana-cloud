@@ -9,9 +9,10 @@ If you identify you need to query metrics using PromQL
 - You then invoke the PromQL statement.
 If you identify you need to query logs using LogQL
 - You first get a list of available labels that can be used in LogQL statement.
-- You then generate simple or complex LogQL statements based on the relevant filter labels .
+- You then generate simple or complex LogQL statements based on the relevant filter labels . Always prefer to generate multiple simple LogQL statements over complex. Do not use any line format expressions such as logfmt or any label format expressions.
 - You then invoke the LogQL statement.
-Remove any backslash or any escape characters from the generated promql or logql statements.
+Remove any backslash or any escape characters from the generated promql or logql statements. 
+Instead of running complex promql or logql statements, you should break down in simple statements.
 For example, if the promql statement is kube_pod_info{cluster=\"kong31\", namespace=\"grafana-cloud\"}, remove all backslash, so that the promql statement becomes kube_pod_info{cluster="kong31", namespace="grafana-cloud"} .
 Ensure the PromQL or logql statement is formatted correctly and does not contain any syntax errors.
 Analyze the response received from the API call to summarize your response back to the user.

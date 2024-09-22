@@ -54,7 +54,7 @@ def create(event):
         urls = [{"url": url} for url in obj_url_to_crawl]
 
         add_datasource_response = client.create_data_source(
-            dataDeletionPolicy='DELETE',
+            dataDeletionPolicy='RETAIN',
             dataSourceConfiguration={
                 'type': 'WEB',
                 'webConfiguration': {
@@ -102,7 +102,7 @@ def create(event):
         )
 
         add_s3_datasource_response = client.create_data_source(
-            dataDeletionPolicy='DELETE',
+            dataDeletionPolicy='RETAIN',
             dataSourceConfiguration={
                 'type': 'S3',
                 's3Configuration': {

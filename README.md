@@ -34,7 +34,14 @@ The two repositories suggested are
 ```
 https://github.com/kubernetes/kube-state-metrics/tree/main/docs/metrics
 https://github.com/grafana/loki/tree/main/docs/sources/query
+https://github.com/prometheus/node_exporter
+https://github.com/google/cadvisor/tree/master/docs
 ```
+
+### Enable Bedrock Model Access
+
+This solution uses `anthropic.claude-3-sonnet-20240229-v1:0"` and `amazon.titan-embed-text-v1`. Please go to AWS Console>Bedrock>Model Access and enable access to `Claude 3 Sonnet` and `Titan Embeddings G1 - Textv1.2`
+
 
 ## Deploy Commands
 

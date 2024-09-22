@@ -102,8 +102,8 @@ class ObservabilityAssistantAgent(cdk.Stack):
             sources=[s3d.Source.asset("assets/")],
             destination_bucket=kb_bucket,
             destination_key_prefix="docs/",
-            ephemeral_storage_size=Size.gibibytes(1),
-            memory_limit=1024,
+            ephemeral_storage_size=Size.gibibytes(3),
+            memory_limit=3072,
         )
 
         create_bedrock_kb_lambda = _lambda.Function(
