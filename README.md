@@ -29,7 +29,7 @@ Note the secret names from secrets manager under `config/development` at the `Lo
 
 You **MUST** clone in `assets` folder.
 
-The two repositories suggested are 
+Few repositories suggested are 
 
 ```
 https://github.com/kubernetes/kube-state-metrics/tree/main/docs/metrics
@@ -57,9 +57,10 @@ Deployment will create the following implementation
 
 ## Post Deployment actions
 
+* Wait for ~15 minutes for the Knowledgebase web crawler job to finish crawling and indexing the pages in OpenSearch. This is an asynchronous process. You can check this by going to Amazon Bedrock > Knowlede bases > grafana-bedrock-kb-docs > promql-datasource and wait for the Status to be ready.
 * To access the UI - Create a user to login in the Cognito Pool and access the load balancer URL in the output. Use the login crendential from the Cognito Pool. Ignore the certificate warning
 
 
 ## Note
 
-* If you add URLs to crawl in config/development.yaml file, then you must delete the stack `grafana-observability-assistant` (and its dependent stacks) by running `cdk destroy grafana-observability-assistant --context environment=development` and create again by running `cdk deploy grafana-observability-assistant --context environment=development`. This is because currently, the Custom Resource Lambda function which creates the Bedrock Knowledgebase (`stacks/bedrock_agent/lambda/knowledgebase.py`) doesnt implements any update method. Pull requests are appreciated.
+* If you add URLs to crawl in config/development.yaml file, then you must delete the stack `grafana-knowledgebase` (and its dependent stacks) by running `cdk destroy grafana-knowledgebase --context environment=development` and create again by running `cdk deploy --all --context environment=development`. This is because currently, the Custom Resource Lambda function which creates the Bedrock Knowledgebase (`stacks/bedrock_agent/lambda/knowledgebase.py`) doesnt implements any update method. Pull requests are appreciated.
