@@ -60,7 +60,7 @@ Deployment will create the following implementation
 * Wait for ~15 minutes for the Knowledgebase web crawler job to finish crawling and indexing the pages in OpenSearch. This is an asynchronous process. You can check this by going to Amazon Bedrock > Knowlede bases > grafana-bedrock-kb-docs > promql-datasource and wait for the Status to be ready.
 * To access the UI - Create a user to login in the Cognito Pool and access the load balancer URL in the output. Use the login crendential from the Cognito Pool. Ignore the certificate warning
 
-![image](./images/prompts.gif)
+![prompt](./images/prompts.gif)
 
 
 ## Note
