@@ -17,12 +17,13 @@ from aws_cdk import (
     ArnFormat,
     aws_logs as logs
 )
-class LambdaStack(Stack):
+class RoCStack(Stack):
 
     def __init__(self, 
                  scope: Construct, 
                  construct_id: str,
-                 secret_name: str,
+                 loki_secret_name: str,
+                 prom_secret_name: str,
                  ecs_cluster: ecs.Cluster,
                  **kwargs
                  ) -> None:
@@ -30,36 +31,36 @@ class LambdaStack(Stack):
 
        
         #Get Secret Manager secret ARN from the name
-        secret = sm.Secret.from_secret_name_v2(self, "Secret", secret_name)
+        loki_secret = sm.Secret.from_secret_name_v2(self, "LokiSecret", loki_secret_name)
+        prom_secret = sm.Secret.from_secret_name_v2(self, "PromSecret", prom_secret_name)
 
         application_image = ecs.AssetImage.from_asset(
-                                            directory="stacks/logs_action_group/lambda",
+                                            directory="stacks/roc_action_group/src",
                                             platform=ecr_assets.Platform.LINUX_ARM64
                                             )  
         
         log_group = logs.LogGroup(self, "LogGroup",
-                                      log_group_name="logs-action-group",
+                                      log_group_name="roc-action-group",
                                        removal_policy=cdk.RemovalPolicy.DESTROY )
 
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
-            "logs-action-group-fargate",
-            service_name="logs-action-group",
+            "roc-action-group-fargate",
+            service_name="roc-action-group",
             cluster=ecs_cluster,
             memory_limit_mib=2048,
             cpu=1024,
             desired_count=1,
             public_load_balancer=False,
-            load_balancer_name="logs-action-group",
+            load_balancer_name="roc-action-group",
             open_listener=False,
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=application_image,
                 container_port=80,
-                log_driver=ecs.LogDriver.aws_logs(log_group=log_group,mode=ecs.AwsLogDriverMode.NON_BLOCKING, stream_prefix='logs-action-group'),
+                log_driver=ecs.LogDriver.aws_logs(log_group=log_group,mode=ecs.AwsLogDriverMode.NON_BLOCKING, stream_prefix='roc-action-group'),
                 environment={
-                    "POWERTOOLS_SERVICE_NAME": "LogsLambdaAgent",
-                    "POWERTOOLS_METRICS_NAMESPACE": "LogsLambdaAgent",
-                    "API_SECRET_NAME": secret.secret_name
+                    "LOKI_API_SECRET_NAME": loki_secret.secret_name,
+                    "PROM_API_SECRET_NAME": prom_secret.secret_name
                 },
             ),
         )
@@ -94,6 +95,7 @@ class LambdaStack(Stack):
                 "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents",
             ])
         )
-        secret.grant_read(fargate_service.task_definition.task_role)
+        prom_secret.grant_read(fargate_service.task_definition.task_role)
+        loki_secret.grant_read(fargate_service.task_definition.task_role)
         fargate_service.load_balancer.connections.security_groups[0].add_ingress_rule(peer=ec2.Peer.ipv4(ecs_cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(80))
         self.fargate_service = fargate_service

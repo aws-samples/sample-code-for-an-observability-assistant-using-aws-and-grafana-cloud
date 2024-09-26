@@ -25,7 +25,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
     def __init__(self, 
                  scope: Construct, 
                  construct_id: str,
-                 metrics_lambda: _lambda.Function,
+                #  metrics_lambda: _lambda.Function,
                  opensearch_serverless_collection: opensearchserverless.CfnCollection,
                  urls_to_crawl: list,
                  **kwargs) -> None:
@@ -182,7 +182,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
         
 
         # logs_lambda.grant_invoke(agent_role)
-        metrics_lambda.grant_invoke(agent_role)
+        # metrics_lambda.grant_invoke(agent_role)
         model = bedrock.FoundationModel.from_foundation_model_id(self, "AnthropicClaudeV3", bedrock.FoundationModelIdentifier.ANTHROPIC_CLAUDE_3_SONNET_20240229_V1_0)
         
         #Add policy to invoke model
@@ -202,12 +202,12 @@ class ObservabilityAssistantAgent(cdk.Stack):
             agent_instruction = file.read()
 
         #Add schema for the log action group
-        with open('stacks/logs_action_group/lambda/openapi_schema.json', 'r') as file:
-            log_agent_schema = file.read()
+        with open('stacks/roc_action_group/src/openapi_schema.json', 'r') as file:
+            roc_api_schema = file.read()
 
         #Add schema for the metrics action group
-        with open('stacks/metrics_action_group/lambda/openapi_schema.json', 'r') as file:
-            metrics_agent_schema = file.read()
+        # with open('stacks/metrics_action_group/lambda/openapi_schema.json', 'r') as file:
+        #     metrics_agent_schema = file.read()
 
         # Define advanced prompt - orchestation template - override orchestration template defaults
         with open('stacks/bedrock_agent/agent_orchestration_template.json', 'r') as file:
@@ -235,28 +235,28 @@ class ObservabilityAssistantAgent(cdk.Stack):
             action_groups=[
                 bedrock.CfnAgent.AgentActionGroupProperty
                 (
-                    action_group_name="logs-api-caller", 
-                    description="Logs API Caller",
+                    action_group_name="roc-api-caller", 
+                    description="Return of Control API Caller",
                     action_group_executor=bedrock.CfnAgent.ActionGroupExecutorProperty(
                         custom_control="RETURN_CONTROL"
                     ),
                     action_group_state="ENABLED",
                     api_schema=bedrock.CfnAgent.APISchemaProperty(
-                        payload = log_agent_schema
+                        payload = roc_api_schema
                     )
                 ),
-                bedrock.CfnAgent.AgentActionGroupProperty
-                (
-                    action_group_name="metrics-api-caller", 
-                    description="Metrics API Caller",
-                    action_group_executor=bedrock.CfnAgent.ActionGroupExecutorProperty(
-                        lambda_=metrics_lambda.function_arn
-                    ),
-                    action_group_state="ENABLED",
-                    api_schema=bedrock.CfnAgent.APISchemaProperty(
-                        payload = metrics_agent_schema
-                    )
-                ),
+                # bedrock.CfnAgent.AgentActionGroupProperty
+                # (
+                #     action_group_name="metrics-api-caller", 
+                #     description="Metrics API Caller",
+                #     action_group_executor=bedrock.CfnAgent.ActionGroupExecutorProperty(
+                #         lambda_=metrics_lambda.function_arn
+                #     ),
+                #     action_group_state="ENABLED",
+                #     api_schema=bedrock.CfnAgent.APISchemaProperty(
+                #         payload = metrics_agent_schema
+                #     )
+                # ),
                 bedrock.CfnAgent.AgentActionGroupProperty
                 (
                     action_group_name="clarifying-question", 
@@ -281,14 +281,14 @@ class ObservabilityAssistantAgent(cdk.Stack):
 
         self.bedrock_agent = agent
 
-        _lambda.CfnPermission(
-            self,
-            "MetricsLambdaPermissions",
-            action="lambda:InvokeFunction",
-            function_name=metrics_lambda.function_name,
-            principal="bedrock.amazonaws.com",
-            source_arn=agent.attr_agent_arn
-        )
+        # _lambda.CfnPermission(
+        #     self,
+        #     "MetricsLambdaPermissions",
+        #     action="lambda:InvokeFunction",
+        #     function_name=metrics_lambda.function_name,
+        #     principal="bedrock.amazonaws.com",
+        #     source_arn=agent.attr_agent_arn
+        # )
 
         bedrock_agent_alias = bedrock.CfnAgentAlias(
             self,
