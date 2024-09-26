@@ -121,18 +121,21 @@ def process_response(response,agent_id, agent_alias_id, session_id):
 # Function which calls the local lambda function to get the data
 def get_data_from_api(parameters):
     return_function_response = parameters
+    print(return_function_response)
     path_to_invoke = "http://"+function_calling_url+return_function_response['apiPath'] #TODO: Pass the protocol from ALB
     # method_to_invoke = return_function_response['httpMethod']
     parameters_to_pass = return_function_response['parameters']
     # Check if the parameters_to_pass is not None
+    
+    session = requests.Session()
 
     if not len(parameters_to_pass) == 0:
-        parameters_to_pass = parameters_to_pass[0]['value']
+        parameters_value = parameters_to_pass[0]['value']
+        parameters_name = parameters_to_pass[0]['name']
+        session.params = {
+            parameters_name: parameters_value
+        }
     # {'actionGroup': 'logs-api-caller', 'actionInvocationType': 'RESULT', 'apiPath': '/get-available-logql-labels', 'httpMethod': 'GET', 'parameters': []}
-    session = requests.Session()
-    session.params = {
-            'logql': parameters_to_pass
-    }
     
     response = session.get(path_to_invoke).json()
     print("=====RESPONSE FROM API=======")

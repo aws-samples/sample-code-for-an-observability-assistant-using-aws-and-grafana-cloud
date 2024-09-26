@@ -66,3 +66,5 @@ Deployment will create the following implementation
 ## Note
 
 * If you add URLs to crawl in config/development.yaml file, then you must delete the stack `grafana-knowledgebase` (and its dependent stacks) by running `cdk destroy grafana-knowledgebase --context environment=development` and create again by running `cdk deploy --all --context environment=development`. This is because currently, the Custom Resource Lambda function which creates the Bedrock Knowledgebase (`stacks/bedrock_agent/lambda/knowledgebase.py`) doesnt implements any update method. Pull requests are appreciated.
+* If you are contributing to this project
+    * To generate openapi schema required for Bedrock Action group, `cd stacks/roc_action_group/src` and run `docker compose up`. Then go to `http://localhost/openapi.json` to view the generated openapi schema. Save it in the same folder as `openapi_schema.json`

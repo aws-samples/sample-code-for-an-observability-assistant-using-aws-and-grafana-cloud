@@ -1,0 +1,10 @@
+services:
+  rocapi:
+    container_name: rocapi
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    ports:
+      - 80:80
+    environment:
+      - AWS_DEFAULT_REGION=us-west-2
