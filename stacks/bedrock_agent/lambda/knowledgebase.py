@@ -2,7 +2,12 @@ from requests import request
 import json
 import os
 import boto3
-client = boto3.client('bedrock-agent')
+import botocore
+
+session_config = botocore.config.Config(
+            user_agent_extra=f'APN/1.0 Grafana/1.0 Observability Assistant/168813752b3fd8f8a0e9411b7f9598a683f9854f'
+)
+client = boto3.client('bedrock-agent', config=session_config)
 # from crhelper import CfnResource
 from time import sleep
 
