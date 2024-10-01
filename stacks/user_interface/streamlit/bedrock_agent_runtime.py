@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+import botocore.config
 from botocore.exceptions import ClientError
 output_text = ""
 citations = []
@@ -12,9 +13,11 @@ knowledge_base_id = os.environ.get("KNOWLEDGEBASE_ID")
 function_calling_url = os.environ.get("FUNCTION_CALLING_URL")
 
 def invoke_agent_ROC(agent_id, agent_alias_id, session_id,invocation_id,return_control_invocation_results):
-    print(return_control_invocation_results)
-    print(type(return_control_invocation_results))
-    client = boto3.session.Session().client(service_name="bedrock-agent-runtime")
+    
+    session_config = botocore.config.Config(
+        user_agent_extra=f'APN/1.0 Grafana/1.0 Observability Assistant/168813752b3fd8f8a0e9411b7f9598a683f9854f'
+    )
+    client = boto3.session.Session().client(service_name="bedrock-agent-runtime",config=session_config)
     response = client.invoke_agent(
             agentId=agent_id,
             agentAliasId=agent_alias_id,
@@ -41,7 +44,10 @@ def invoke_agent_ROC(agent_id, agent_alias_id, session_id,invocation_id,return_c
     
 def invoke_agent(agent_id, agent_alias_id, session_id, prompt):
     try:
-        client = boto3.session.Session().client(service_name="bedrock-agent-runtime")
+        session_config = botocore.config.Config(
+            user_agent_extra=f'APN/1.0 Grafana/1.0 Observability Assistant/168813752b3fd8f8a0e9411b7f9598a683f9854f'
+        )
+        client = boto3.session.Session().client(service_name="bedrock-agent-runtime", config=session_config)
         # See https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agent-runtime/client/invoke_agent.html
         response = client.invoke_agent(
             agentId=agent_id,
@@ -138,9 +144,6 @@ def get_data_from_api(parameters):
     # {'actionGroup': 'logs-api-caller', 'actionInvocationType': 'RESULT', 'apiPath': '/get-available-logql-labels', 'httpMethod': 'GET', 'parameters': []}
     
     response = session.get(path_to_invoke).json()
-    print("=====RESPONSE FROM API=======")
-    print(response)
-    print("=====RESPONSE FROM API ENDS=======")
     response_body = {"application/json": {"body": json.dumps(response)}}
     api_response = [{
                 'apiResult': {
