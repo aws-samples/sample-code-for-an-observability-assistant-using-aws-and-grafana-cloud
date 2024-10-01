@@ -2,3 +2,4 @@ boto3
 streamlit==1.37.0
 pandas==2.2.2
 requests
+botocore

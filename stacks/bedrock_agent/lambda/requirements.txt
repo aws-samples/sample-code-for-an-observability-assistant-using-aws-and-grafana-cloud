@@ -2,4 +2,5 @@ requests
 aws-lambda-powertools[tracer]
 # pydantic
 boto3
+botocore
 crhelper
