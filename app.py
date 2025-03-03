@@ -63,5 +63,6 @@ NagSuppressions.add_stack_suppressions(bedrock_agent_stack, [{"id":"AwsSolutions
 NagSuppressions.add_stack_suppressions(knowledgebase_stack, [{"id":"AwsSolutions-IAM4", "reason":"Policies are set by Custom Resource."}])
 NagSuppressions.add_stack_suppressions(bedrock_agent_stack, [{"id":"AwsSolutions-S1", "reason":"Not required"}])
 NagSuppressions.add_stack_suppressions(bedrock_agent_stack, [{"id":"AwsSolutions-L1", "reason":"Not controlled or created by this solution"}])
+NagSuppressions.add_stack_suppressions(knowledgebase_stack, [{"id":"AwsSolutions-L1", "reason":"Not controlled or created by this solution"}])
 
 app.synth()

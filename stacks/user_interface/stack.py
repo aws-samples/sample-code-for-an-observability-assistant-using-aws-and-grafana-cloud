@@ -53,6 +53,7 @@ class WebAppStack(Stack):
             cluster=ecs_cluster,
             service_name="streamlit-webapp",
             memory_limit_mib=2048,
+            min_healthy_percent=50,
             cpu=1024,
             desired_count=1,
             load_balancer_name="streamlit-webapp",
