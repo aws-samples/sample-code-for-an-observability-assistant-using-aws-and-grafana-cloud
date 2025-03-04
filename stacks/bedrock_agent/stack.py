@@ -183,7 +183,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
 
         # logs_lambda.grant_invoke(agent_role)
         # metrics_lambda.grant_invoke(agent_role)
-        model = bedrock.FoundationModel.from_foundation_model_id(self, "AnthropicClaudeV3", bedrock.FoundationModelIdentifier.ANTHROPIC_CLAUDE_3_SONNET_20240229_V1_0)
+        model = bedrock.FoundationModel.from_foundation_model_id(self, "AnthropicClaudeV3", bedrock.FoundationModelIdentifier.ANTHROPIC_CLAUDE_3_5_SONNET_20241022_V2_0)
         
         #Add policy to invoke model
         agent_role.add_to_policy(iam.PolicyStatement(
@@ -222,6 +222,7 @@ class ObservabilityAssistantAgent(cdk.Stack):
             auto_prepare=True,
             agent_resource_role_arn=agent_role.role_arn,
             foundation_model=model.model_id,
+
             instruction=agent_instruction,
             # User input for asking clarifying questions
 

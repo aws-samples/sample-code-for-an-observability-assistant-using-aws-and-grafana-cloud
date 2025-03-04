@@ -49,6 +49,7 @@ class RoCStack(Stack):
             service_name="roc-action-group",
             cluster=ecs_cluster,
             memory_limit_mib=2048,
+            min_healthy_percent=50,
             cpu=1024,
             desired_count=1,
             public_load_balancer=False,
